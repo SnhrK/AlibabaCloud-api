@@ -1,6 +1,6 @@
 {
     "require": {
-		"slim/slim": "^3.0",
+		    "slim/slim": "^3.0",
         "aws/aws-sdk-php": "2.7.2"
     },
     "autoload": {

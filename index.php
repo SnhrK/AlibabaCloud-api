@@ -1,64 +1,67 @@
 <?php
 
-/* Note: need to add "ap-northeast-1" to sdk config: sdk/aliyun-php-sdk-core/Regions/EndpointConfig.php */
+require __DIR__ . '/vender/autoload.php'
 
-include_once 'sdk/aliyun-php-sdk-core/Config.php';
-use Ecs\Request\V20140526 as Ecs;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
-$iClientProfile = DefaultProfile::getProfile("ap-northeast-1", "LTAI3DcYkMic2Smg", "6tS7EVcFgbRSeX3sj7Aci8JFbvKNVO");
-$client = new DefaultAcsClient($iClientProfile);
+$config['displayErrorDetails'] = true;
+$config['addContentLengthHeader'] = true;
+$config["determineRouteBeforeAppMiddleware"] = true;
 
-//describe regions
-// $request = new Ecs\DescribeRegionsRequest();
-// $request->setMethod("GET");
-//
-// $response = $client->getAcsResponse($request);
+// Initial Slim Routing App with OAuth2 Implementation
+$app = new \Slim\App([
+    "settings" => $config
+]);
 
-//describe images
-// $request = new Ecs\DescribeImagesRequest();
-// $request->setMethod("GET");
-//
-// $response = $client->getAcsResponse($request); //ImageId: ubuntu1404_64_40G_cloudinit_20160727.raw <- Ubuntu x86_64 14.04 64位
+// var_dump($app);
 
-
-//create a security group
-// $request = new Ecs\CreateSecurityGroupRequest();
-// $request->setMethod("POST");
-//
-// $response = $client->getAcsResponse($request);
+// Middleware (1) : Set 'Content-Type', 'application/json; charset=utf-8' Headers
+// no longer used, setted below with CORS middleware
+$set_header = function ($request, $response, $next) {
+    $newResponse = $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+    $response = $next($request, $newResponse);
+    return $response;
+};
 
 
-//List security groups
-// $request = new Ecs\DescribeSecurityGroupsRequest();
-// $request->setMethod("GET");
+// CORS middleware
+$app->add(function($request, $response, $next) {
+    $route = $request->getAttribute("route");
+
+    $methods = [];
+
+    if (!empty($route)) {
+        $pattern = $route->getPattern();
+
+        foreach ($this->router->getRoutes() as $route) {
+            if ($pattern === $route->getPattern()) {
+                $methods = array_merge_recursive($methods, $route->getMethods());
+            }
+        }
+        //Methods holds all of the HTTP Verbs that a particular route handles.
+    } else {
+        $methods[] = $request->getMethod();
+    }
+
+    $response = $next($request, $response);
 
 
-// $response = $client->getAcsResponse($request);
+    return $response
+    ->withHeader('Content-Type', 'application/json; charset=utf-8')
+    ->withHeader("Access-Control-Allow-Origin", "*")
+    ->withHeader("Access-Control-Allow-Headers", "Content-Type")
+    ->withHeader("Access-Control-Allow-Headers", "Authorization")
+    ->withHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+});
+
+// Start Routing : Load all route files
+$app->get('/fftest', function ($request, $response, $args) {
+  echo "haha";
+
+});
 
 
-//create instance
-// $request = new Ecs\CreateInstanceRequest();
-// $request->setMethod("POST");
-// $request->setImageId("ubuntu1404_64_40G_cloudinit_20160727.raw");
-// $request->setInstanceType("ecs.t1.small");
-// $request->setInstanceName("suna-test-01");
-//
-//
-// $response = $client->getAcsResponse($request);
 
-//Describe Instances
-// $request = new Ecs\DescribeInstancesRequest();
-// $request->setMethod("GET");
-//
-//
-// $respose = $client->getAcsResponse($request);
-
-
-// Requesting EIPs
-// $request = new Ecs\DescribeEipAddressesRequest();
-// $request->setMethod("GET");
-//
-// $respose = $client->getAcsResponse($request);
-
-
-print_r($response);
+// Run
+$app->run();
