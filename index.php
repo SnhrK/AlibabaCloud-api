@@ -15,6 +15,7 @@ $app = new \Slim\App([
 ]);
 
 // var_dump($app);
+// test
 
 // Middleware (1) : Set 'Content-Type', 'application/json; charset=utf-8' Headers
 // no longer used, setted below with CORS middleware
